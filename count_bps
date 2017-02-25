@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# Count the number of nucleotides in a set of fasta/q sequences
+
+input="${1:-/dev/stdin}"
+
+# Either of these options should work:
+
+# bioawk:
+bioawk -cfastx 'BEGIN{ totalbp = 0} { totalbp += length($seq)} END {printf "total nucleotides: %d\n", totalbp}' $input
+# or
+# readfq (from from https://github.com/ConradStack/readfq)
+# kseq_fastq_base $input  
+
+
+# Q. Will bioawk might loose precision on large data sets?
+# A. Tested on 6Gbp fastq file and received the same answer from both lines
+
+# Q. Is either line / method faster?
+# A. (TODO - time them both)

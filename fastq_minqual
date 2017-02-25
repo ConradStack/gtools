@@ -1,0 +1,22 @@
+#!/bin/bash
+
+#	Return the overall minimum quality score from a set of fastQ reads
+#  	 - (default) Only work on first 1000 entries
+#	n.b. -> bioawk already subtracts 33 from the quality characters (for Phred+33).  
+#			Another 31 might need to be subtracted for Phred+64 (e.g., illumina [1.3 to 1.8) )
+#
+# 		-> recovering the Phred score itself from raw reads would be roughly equal to subtracting the output of this script from each quality score 
+
+input="${1:-/dev/stdin}"
+
+bioawk -c fastx 'BEGIN{x=0;MIN=150} 
+{ 
+	if(NR <= 10000){
+		x=minqual($qual); 
+		MIN = (MIN < x ? MIN : x);
+	} else {
+		exit;
+	}
+} 
+END{ print MIN+33 }' ${input}
+

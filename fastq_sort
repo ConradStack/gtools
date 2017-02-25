@@ -1,0 +1,12 @@
+#!/bin/bash
+
+#	Sort a FastQ file by read names.  This can be useful when preparing files to be (pseudo)-interleaved
+#
+#	(todo)
+#		- use bioawk (somehow) instead?  Using cat-paste-sort-tr will produce weird results if fastq read are not contained in blocks of 4 lines.
+#
+
+input="${1:-/dev/stdin}"
+
+cat ${input} | paste - - - - | sort -k1,1 -t " " | tr "\t" "\n" 
+

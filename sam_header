@@ -1,0 +1,6 @@
+#!/bin/bash
+
+input="${1:-/dev/stdin}"
+
+# print SAM/BAM header (should contain sequence names (SN))
+samtools view -H $input
