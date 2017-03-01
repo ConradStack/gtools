@@ -11,7 +11,10 @@
 
 # TODO: 
 # 	[]	add support for specifying regions, writing to separate files
-
+# 	[]	make sure that gaps in reads (e.g., CIGAR character 'P') are not written
+#	[]	provide option to specify a minimum *post-soft-trim* read length to export
+#	[]	provide option to only export pairs of reads, which are both mapped 
+#	[]	provide option to specify either fastQ or fastA as the export format
 
 
 # -*- coding: utf-8 -*-
@@ -28,7 +31,19 @@ COMPLEMENT = {'A': 'T',
 			  'T': 'A',
 			  'C': 'G',
 			  'G': 'C',
-			  'N': 'N'}
+			  'N': 'N',
+			  'U': 'A',
+			  'K': 'M',
+			  'M': 'K',
+			  'R': 'Y',
+			  'Y': 'R',
+			  'S': 'S',
+			  'W': 'W',
+			  'B': 'V',
+			  'V': 'B',
+			  'H': 'D',
+			  'D': 'H',
+			  'X': 'X'}
 
 def reverse_complement(sequence):
 	"""
@@ -148,7 +163,11 @@ def main():
 			#  the until_eof=True flag"
 			# "Without a reference or region all mapped reads in the file will be fetched"
 			# "fetch() requires an index when iterating over a SAM/BAM file. To iterate over a file without index, use the ``until_eof=True`"
-			#  NB -> unmapped reads with pairs that map will often show up regardless of until_eof=False
+			#  
+			# WARNINGS:
+			#	 -> (2017-03-01) unmapped reads with pairs that map seem to show up regardless of until_eof=False.  
+			#		Read over SAM spec to figure out why this is happenning; according to the pysam FAQ 
+			#		it should not do this (http://pysam.readthedocs.io/en/latest/faq.html?highlight=until_eof#alignmentfile-fetch-does-not-show-unmapped-reads).
 			# 
 			
 			if (args.unmapped) or (not r.is_unmapped):
