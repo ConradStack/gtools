@@ -1,0 +1,165 @@
+#!/usr/bin/env python
+
+#
+#	Extract fastq sequences from SAM/BAM files
+# 	- This code is an extension of [a script found here](https://github.com/martijnvermaat/bio-playground/blob/master/bam-to-fastq/bam_to_fastq.py)
+# 
+# File: 	sam_extract
+# Author:	Conrad Stack
+# Email:	conrad.stack@gmail.com
+# --------------------------------------------
+
+
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
+import os.path
+import argparse
+import pysam
+from array import array
+
+
+# DNA base complements
+COMPLEMENT = {'A': 'T',
+			  'T': 'A',
+			  'C': 'G',
+			  'G': 'C',
+			  'N': 'N'}
+
+def reverse_complement(sequence):
+	"""
+	Return reverse complement of DNA sequence.
+	"""
+	return ''.join(COMPLEMENT[b] for b in sequence[::-1])
+
+def write_read(fastq, read):
+	"""
+	Write read to open FASTQ file.
+		- add int(33) to quality scores to put them in sanger quality format
+		- if a 'NoneType does not have tolist function' exception is raised, it is likely that the mapped reads were originally in FastA format, and do not have associated quality scores
+	"""
+	quality_array = read.query_alignment_qualities.tolist()
+	quality_sanger = [x.__add__(33) for x in quality_array]
+	quality_string = array('B',quality_sanger).tostring()
+
+	info = {'index': int(not read.is_read1) + 1,
+			'name':  read.qname}
+	if read.is_reverse:
+		info.update({'quality':  quality_string[::-1],
+					 'sequence': reverse_complement(read.query_alignment_sequence)})
+	else:
+		info.update({'quality':  quality_string,
+					 'sequence': read.query_alignment_sequence})
+
+	fastq.write('@{name}/{index}\n{sequence}\n+\n{quality}\n'.format(**info))
+
+# */
+
+def main():
+
+	parser = argparse.ArgumentParser(description="Extract reads from a SAM/BAM file to fastq format", epilog="* The mapped reads must have quality scores (this script will fail with mapped FastA reads)")
+	parser.add_argument('-o','--output',dest='outfile', metavar='output_file',
+		help='file to write sequences to')
+	parser.add_argument('-b','--bamfile',dest='isbam', action="store_const", const=True, 
+		help='indicates whether input file is a bam file or not (default is to check)')
+	parser.add_argument('-u','--unmapped',dest='unmapped', action='store_true',
+		help='include unmapped reads in the output?  Ignored if regions are specified. (default: False)')
+	parser.add_argument('-m','--exmapped',dest='exmapped', action='store_true', 
+		help='exclude mapped reads in the output? NOT IMPLEMENTED YET (default: False)')
+	parser.add_argument('-f','--force',dest='force', action='store_true', 
+		help='force overwriting the output file if it exists')	
+	parser.add_argument('infile', metavar='alignment_file',
+		help='BAM/SAM file containing read alignments. Reads must contain quality scores.')
+
+	args = parser.parse_args()
+	print(args)
+
+
+	# process arguments
+
+	if(not os.path.exists(args.infile)):
+		out_msg = (args.infile + " does not exist")
+		#raise IOError(args.infile + " does not exist")
+		print(out_msg)
+		exit(1)
+
+	inext = os.path.splitext(args.infile)
+	if(args.outfile is None):
+		args.outfile = inext[0] + '.fastq'
+		# optionally, write reads to sys.stdout
+
+	# open infile in text mode (for SAM files) or binary mode (for BAM files)?
+	read_mode = None
+	if(args.isbam is None):
+		read_mode = 'rb' if (inext[1][1:].lower() is 'bam') else 'r'
+		args.isbam = (read_mode == 'rb')
+	else:
+		read_mode = 'rb' if (args.isbam) else 'r'
+	assert read_mode is not None
+
+	# Check for the previous existance of the output file
+	if(not args.force and os.path.exists(args.outfile)):
+		out_msg = (args.outfile + " already exists! Used -f option if you want to overwrite it ")
+		#raise IOError(out.msg)
+		print(out_msg)
+		exit(2)
+
+
+	with open(args.infile,read_mode) as fin:
+		
+		# initialize input and output objects
+		samfile = pysam.AlignmentFile(fin)
+		fout = open(args.outfile, "w")
+		
+		print samfile.unmapped
+		print samfile.mapped
+
+		# retrieve an iterator to the reads
+		ptr = samfile.fetch(until_eof=args.unmapped)
+		#ptr = samfile.fetch()
+		for r in ptr:
+			# mapped reads
+			# "If the SAM/BAM file contains unaligned reads, 
+			#  they can be included in the iteration by adding 
+			#  the until_eof=True flag"
+			# "Without a reference or region all mapped reads in the file will be fetched"
+			#  NB -> unmapped reads with pairs that map will often show up regardless of until_eof=False
+			# 
+			if(r is None):
+				print(r.query_name)
+
+			if (args.unmapped) or (not r.is_unmapped):
+				write_read(fout, r)
+			
+			# DEBUG
+			# if (r.is_unmapped) and (not args.unmapped):
+			# 	print(r.query_name)
+			# /DEBUG
+		
+		fout.flush()
+		fout.close()
+
+
+	#ptr = samfile.fetch(until_eof=True)
+	# match = re.findall(r'([0-9]+)([MIDNSHPX=])', "136M15S" )
+# 	
+
+# 	for r in ptr:
+# 		# mapped reads
+# 		if not r.is_unmapped:
+# 			#assert r.cigarstring=='151M'
+# 			#assert r.cigarstring.find("S") == -1
+# 			write_read(fout, r)
+# 		#assert not r.is_unmapped
+# 		#r.query_alignment_sequence
+# 		#r.query_alignment_qualities
+
+
+# samfile.close()
+# fout.flush()
+# fout.close()
+
+
+if __name__ == '__main__':
+	main()
+
