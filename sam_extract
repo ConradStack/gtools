@@ -9,6 +9,10 @@
 # Email:	conrad.stack@gmail.com
 # --------------------------------------------
 
+# TODO: 
+# 	[]	add support for specifying regions, writing to separate files
+
+
 
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
@@ -57,6 +61,8 @@ def write_read(fastq, read):
 
 def main():
 
+	# Set up CLI arguments then parse
+	#
 	parser = argparse.ArgumentParser(description="Extract reads from a SAM/BAM file to fastq format", epilog="* The mapped reads must have quality scores (this script will fail with mapped FastA reads)")
 	parser.add_argument('-o','--output',dest='outfile', metavar='output_file',
 		help='file to write sequences to')
@@ -67,22 +73,29 @@ def main():
 	parser.add_argument('-m','--exmapped',dest='exmapped', action='store_true', 
 		help='exclude mapped reads in the output? NOT IMPLEMENTED YET (default: False)')
 	parser.add_argument('-f','--force',dest='force', action='store_true', 
-		help='force overwriting the output file if it exists')	
+		help='force overwriting the output file if it exists')
+	parser.add_argument('-v','--verbose',dest='verbose', action='store_true', 
+		help='Have verbose output')		
 	parser.add_argument('infile', metavar='alignment_file',
 		help='BAM/SAM file containing read alignments. Reads must contain quality scores.')
 
 	args = parser.parse_args()
-	print(args)
+	
+	if(args.verbose):
+		print(args)
 
 
-	# process arguments
+	# Process Arguments
+	#
 
+	# check that infile exists
 	if(not os.path.exists(args.infile)):
 		out_msg = (args.infile + " does not exist")
 		#raise IOError(args.infile + " does not exist")
 		print(out_msg)
 		exit(1)
 
+	# construct outfile file name if it was not specified
 	inext = os.path.splitext(args.infile)
 	if(args.outfile is None):
 		args.outfile = inext[0] + '.fastq'
@@ -91,11 +104,12 @@ def main():
 	# open infile in text mode (for SAM files) or binary mode (for BAM files)?
 	read_mode = None
 	if(args.isbam is None):
-		read_mode = 'rb' if (inext[1][1:].lower() is 'bam') else 'r'
+		read_mode = 'rb' if (inext[1][1:].lower() == 'bam') else 'r'
 		args.isbam = (read_mode == 'rb')
 	else:
 		read_mode = 'rb' if (args.isbam) else 'r'
 	assert read_mode is not None
+
 
 	# Check for the previous existance of the output file
 	if(not args.force and os.path.exists(args.outfile)):
@@ -104,30 +118,39 @@ def main():
 		print(out_msg)
 		exit(2)
 
+	if(args.verbose):
+		print(args)
 
+
+	#  Iterate through SAM/BAM file, writing reads to output
+	#
+
+	# open input file as fin
 	with open(args.infile,read_mode) as fin:
 		
 		# initialize input and output objects
 		samfile = pysam.AlignmentFile(fin)
 		fout = open(args.outfile, "w")
 		
-		print samfile.unmapped
-		print samfile.mapped
+		if(args.verbose and args.isbam):
+			print "Number of mapped reads:   " + str(samfile.mapped)
+			print "Number of unmapped reads: " + str(samfile.unmapped)
 
-		# retrieve an iterator to the reads
+		# retrieve an iterator to the reads using fetch() function
 		ptr = samfile.fetch(until_eof=args.unmapped)
-		#ptr = samfile.fetch()
 		for r in ptr:
-			# mapped reads
+			
+			# Write mapped reads - and potentially unmapped reads - to file fout
+			#
+			#  Notes:
 			# "If the SAM/BAM file contains unaligned reads, 
 			#  they can be included in the iteration by adding 
 			#  the until_eof=True flag"
 			# "Without a reference or region all mapped reads in the file will be fetched"
+			# "fetch() requires an index when iterating over a SAM/BAM file. To iterate over a file without index, use the ``until_eof=True`"
 			#  NB -> unmapped reads with pairs that map will often show up regardless of until_eof=False
 			# 
-			if(r is None):
-				print(r.query_name)
-
+			
 			if (args.unmapped) or (not r.is_unmapped):
 				write_read(fout, r)
 			
@@ -140,26 +163,7 @@ def main():
 		fout.close()
 
 
-	#ptr = samfile.fetch(until_eof=True)
-	# match = re.findall(r'([0-9]+)([MIDNSHPX=])', "136M15S" )
-# 	
-
-# 	for r in ptr:
-# 		# mapped reads
-# 		if not r.is_unmapped:
-# 			#assert r.cigarstring=='151M'
-# 			#assert r.cigarstring.find("S") == -1
-# 			write_read(fout, r)
-# 		#assert not r.is_unmapped
-# 		#r.query_alignment_sequence
-# 		#r.query_alignment_qualities
-
-
-# samfile.close()
-# fout.flush()
-# fout.close()
-
 
 if __name__ == '__main__':
 	main()
-
+	exit(0)
