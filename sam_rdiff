@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# 	Filter a SAM-formatted file for paired reads that map on to different references
+# 
+
+input="${1:-/dev/stdin}"
+
+bioawk -c sam '!and($flag,12) && $rnext != $rname && $rnext != "="' $input
