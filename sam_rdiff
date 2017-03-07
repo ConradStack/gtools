@@ -10,5 +10,5 @@ input="${1:-/dev/stdin}"
 # 2. read's ref name and mate's ref name is not the same
 # 3. mate's ref name is not '=', which indicates that the ref for read and mate is equal
 #  	(note:  2 & 3 are likely redundant -- check the SAM spec to see if '=' is required when references for read and mate are identical. )
-bioawk -c sam '!and($flag,12) && $rnext != $rname && $rnext != "="' $input
+bioawk -c sam -H '!and($flag,12) && $rnext != $rname && $rnext != "="' $input
 
