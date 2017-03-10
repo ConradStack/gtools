@@ -10,7 +10,8 @@
 # --------------------------------------------
 
 # TODO: 
-# 	[]	add support for specifying regions, writing to separate files
+# 	[x]	add support for specifying regions, writing to separate files
+# 	[]	add support for specifying regions through a bed/gff file
 # 	[]	make sure that gaps in reads (e.g., CIGAR character 'P') are not written
 #	[]	provide option to specify a minimum *post-soft-trim* read length to export
 #	[]	provide option to only export pairs of reads, which are both mapped 
@@ -24,7 +25,7 @@ import os.path
 import argparse
 import pysam
 from array import array
-
+import csv
 
 # DNA base complements
 COMPLEMENT = {'A': 'T',
@@ -51,6 +52,7 @@ def reverse_complement(sequence):
 	"""
 	return ''.join(COMPLEMENT[b] for b in sequence[::-1])
 
+# NOTE:  Only the aligned portions of the reads (i.e., those that are not solf-trimmed) are written
 def write_read(fastq, read):
 	"""
 	Write read to open FASTQ file.
@@ -87,12 +89,16 @@ def main():
 		help='include unmapped reads in the output?  Ignored if regions are specified. (default: False)')
 	parser.add_argument('-m','--exmapped',dest='exmapped', action='store_true', 
 		help='exclude mapped reads in the output? NOT IMPLEMENTED YET (default: False)')
+	parser.add_argument('-l','--minlen',dest='minlen', default=0, nargs=1, type=int,
+		help='Minimum length that aligned portion of reads need to be to be included in the output (default: 0)')
 	parser.add_argument('-f','--force',dest='force', action='store_true', 
 		help='force overwriting the output file if it exists')
 	parser.add_argument('-v','--verbose',dest='verbose', action='store_true', 
 		help='Have verbose output')		
 	parser.add_argument('infile', metavar='alignment_file',
 		help='BAM/SAM file containing read alignments. Reads must contain quality scores.')
+	parser.add_argument('region', metavar='region', nargs='*', 
+		help='Only available for indexed BAM files.  A region string in samtools-compatible format (e.g., Contig239:1:100).  Currently only uses the first region specified')
 
 	args = parser.parse_args()
 	
@@ -133,8 +139,25 @@ def main():
 		print(out_msg)
 		exit(2)
 
+	# Check if 'region' string was specified.  Only valid for bam files
+	region = None
+	if(len(args.region) > 0):
+		region = args.region[0]
+
 	if(args.verbose):
 		print(args)
+
+
+
+
+	# TODO:  
+	#bed = pd.read_csv("ics95_regions.bed", header=None, index_col=False,quotechar="#")
+	# cc=0
+	# bedin = open("ics95_regions.bed",'r')
+	# bed = csv.reader(bedin, delimiter="\t")
+	# for (ref,start,end,name) in bed:
+	# 	print name
+	# 	cc+=1
 
 
 	#  Iterate through SAM/BAM file, writing reads to output
@@ -148,11 +171,11 @@ def main():
 		fout = open(args.outfile, "w")
 		
 		if(args.verbose and args.isbam):
-			print "Number of mapped reads:   " + str(samfile.mapped)
-			print "Number of unmapped reads: " + str(samfile.unmapped)
+			print("Number of mapped reads:   " + str(samfile.mapped))
+			print("Number of unmapped reads: " + str(samfile.unmapped))
 
 		# retrieve an iterator to the reads using fetch() function
-		ptr = samfile.fetch(until_eof=args.unmapped)
+		ptr = samfile.fetch(region=region, until_eof=args.unmapped)
 		for r in ptr:
 			
 			# Write mapped reads - and potentially unmapped reads - to file fout
@@ -169,9 +192,10 @@ def main():
 			#		Read over SAM spec to figure out why this is happenning; according to the pysam FAQ 
 			#		it should not do this (http://pysam.readthedocs.io/en/latest/faq.html?highlight=until_eof#alignmentfile-fetch-does-not-show-unmapped-reads).
 			# 
-			
+			# 
 			if (args.unmapped) or (not r.is_unmapped):
-				write_read(fout, r)
+				if r.query_alignment_length >= args.minlen[0]:  
+					write_read(fout, r)
 			
 			# DEBUG
 			# if (r.is_unmapped) and (not args.unmapped):
