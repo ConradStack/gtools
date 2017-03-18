@@ -3,16 +3,22 @@
 
 #  Filter out features (in gff or bed files) by length
 #  (boilerplate code from https://gist.github.com/opie4624/3896526)
+#
+#   NOTES:
+#   - The call to the subprocess module here might only be valid for python v3.5+
+#
 
 # import modules used here -- sys is a very standard one
 import sys, argparse, logging
-import os.path, subprocess
+import os.path, subprocess, shlex
 
 # Gather our code in a main() function
 def main(args, loglevel):
   logging.basicConfig(format="%(levelname)s: %(message)s", level=loglevel)
  
-    # Check the arguments
+  # Check whether infile exists:
+  # nb -> This check would partially mitigate need to use shlex.quote() command below to prevent command injection - not that its a major concern here 
+  # 
   if(not os.path.exists(args.infile)):
       out_msg = (args.infile + " does not exist")
       print(out_msg)
@@ -25,7 +31,7 @@ def main(args, loglevel):
 
   # format the command string and execute in shell
   file_format = 'bed' if args.bed else 'gff'
-  cmd_str = "bioawk -c %s '($end - $start) > %d' %s" % (file_format, args.minwidth, args.infile )
+  cmd_str = "bioawk -c %s '($end - $start) > %d' %s" % (file_format, args.minwidth, shlex.quote(args.infile) )
   subprocess.run(cmd_str,stdout=args.outfile,shell=True)
 
 
