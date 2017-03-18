@@ -13,7 +13,7 @@
 # 	[x]	add support for specifying regions, writing to separate files
 # 	[]	add support for specifying regions through a bed/gff file
 # 	[]	make sure that gaps in reads (e.g., CIGAR character 'P') are not written
-#	[]	provide option to specify a minimum *post-soft-trim* read length to export
+#	[x]	provide option to specify a minimum *post-soft-trim* read length to export
 #	[]	provide option to only export pairs of reads, which are both mapped 
 #	[]	provide option to specify either fastQ or fastA as the export format
 
