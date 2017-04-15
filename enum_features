@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# Enumerate all of the feature types present in a gff file 
+
+input="${1:-/dev/stdin}"
+
+bioawk -cgff '{ print($feature) }' ${input} | sort | uniq
+
