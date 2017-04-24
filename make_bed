@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# create 3-column bed file from fastx input
+#
+
+input="${1:-/dev/stdin}"
+
+bioawk -cfastx '{print $name,1, length($seq)}' $input
+
+

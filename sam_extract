@@ -53,13 +53,20 @@ def reverse_complement(sequence):
 	return ''.join(COMPLEMENT[b] for b in sequence[::-1])
 
 # NOTE:  Only the aligned portions of the reads (i.e., those that are not solf-trimmed) are written
-def write_read(fastq, read):
+def write_read(fastq, read, keep_softclip=False):
 	"""
 	Write read to open FASTQ file.
 		- add int(33) to quality scores to put them in sanger quality format
 		- if a 'NoneType does not have tolist function' exception is raised, it is likely that the mapped reads were originally in FastA format, and do not have associated quality scores
 	"""
-	quality_array = read.query_alignment_qualities.tolist()
+
+	tmp_seq = read.query_alignment_sequence
+	tmp_qual = read.query_alignment_qualities
+	if(keep_softclip):
+		tmp_seq = read.query_sequence
+		tmp_qual = read.query_qualities
+
+	quality_array = tmp_qual.tolist()
 	quality_sanger = [x.__add__(33) for x in quality_array]
 	quality_string = array('B',quality_sanger).tostring()
 
@@ -67,10 +74,10 @@ def write_read(fastq, read):
 			'name':  read.qname}
 	if read.is_reverse:
 		info.update({'quality':  quality_string[::-1],
-					 'sequence': reverse_complement(read.query_alignment_sequence)})
+					 'sequence': reverse_complement(tmp_seq)})
 	else:
 		info.update({'quality':  quality_string,
-					 'sequence': read.query_alignment_sequence})
+					 'sequence': tmp_seq})
 
 	fastq.write('@{name}/{index}\n{sequence}\n+\n{quality}\n'.format(**info))
 
@@ -89,10 +96,12 @@ def main():
 		help='include unmapped reads in the output?  Ignored if regions are specified. (default: False)')
 	parser.add_argument('-m','--exmapped',dest='exmapped', action='store_true', 
 		help='exclude mapped reads in the output? NOT IMPLEMENTED YET (default: False)')
-	parser.add_argument('-l','--minlen',dest='minlen', default=0, nargs=1, type=int,
+	parser.add_argument('-l','--minlen',dest='minlen', default=0, type=int,
 		help='Minimum length that aligned portion of reads need to be to be included in the output (default: 0)')
 	parser.add_argument('-f','--force',dest='force', action='store_true', 
 		help='force overwriting the output file if it exists')
+	parser.add_argument('-k','--keep',dest='keep', action='store_true', 
+		help='Include soft-clipped regions in output fastq reads (default is the ignore solf-clipped bases)')	
 	parser.add_argument('-v','--verbose',dest='verbose', action='store_true', 
 		help='Have verbose output')		
 	parser.add_argument('infile', metavar='alignment_file',
@@ -194,8 +203,8 @@ def main():
 			# 
 			# 
 			if (args.unmapped) or (not r.is_unmapped):
-				if r.query_alignment_length >= args.minlen[0]:  
-					write_read(fout, r)
+				if r.query_alignment_length >= args.minlen:  
+					write_read(fout, r, args.keep)
 			
 			# DEBUG
 			# if (r.is_unmapped) and (not args.unmapped):

@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# Return reverse-complement of an input fasta sequence using faidx tool (from pyfaidx)
+# 
+# TODO:
+# []	Set up this command as an alias in the bash config file instead of this wrapper script
+
+input="${1:-/dev/stdin}"
+
+faidx -c -r $input
+
+
