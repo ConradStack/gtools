@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# Sum all of the intervals in a gff file (including intervals that could overlap with each other). 
+# 
+# See also:  bed_sum
+
+input="${1:-/dev/stdin}"
+
+bioawk -cgff '{SUM += ($end-$start+1) } END {print SUM}' $input
+

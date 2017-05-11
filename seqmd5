@@ -1,0 +1,66 @@
+#!/usr/bin/env python
+#
+#  Compute the content hash for each nucleotide sequence in a fasta file
+# 
+#	From GA4GH schema docs:
+#  "The MD5 checksum uniquely representing this Reference as a lower-case hexadecimal string, calculated as the MD5 of the upper-case sequence excluding all whitespace characters (this is equivalent to SQ:M5 in SAM)."
+#
+# File:	seqmd5
+# Author:	Conrad Stack
+# Email:	conrad.stack@gmail.com
+# --------------------------------------------
+
+
+# TODO / Issues:
+# 
+# 	[]	Make the script compatible with multiline fastA files (e.g., pre-condition the fastA file using fasta_fold script)
+# 	[]	Edit the option parser so that the default output is to stdout
+# 	[]	Edit the option parser so that fasta input can come from a file or pipe
+
+
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
+
+from os.path import splitext
+import argparse, sys
+import pyfaidx
+import hashlib
+
+
+# Calculate MD5 hashes
+# 
+def calculate_md5(contigs_file, fout):
+	# open fasta file
+	contigs = pyfaidx.Fasta(contigs_file)
+
+	# loop through fasta sequences, writing sequence hashes to the output file
+	#with open(md5file,"w") as fout:
+	# write some metadata in file header:
+	# fout.writestr(datetime.datetime.now())
+	for key in contigs.keys():
+		print(key,file=sys.stderr)
+		# NB -> encode('utf-8') to make it compatible with python 3(.5)
+		tmp = hashlib.md5(contigs[key][:].seq.encode('utf-8').upper()).hexdigest()
+		fout.write(tmp + '\t' + key + '\n')
+
+
+# main() -> parse command line arguments 
+#
+def main():
+	
+	# process CLI arguments
+	parser = argparse.ArgumentParser(description="Calculate the sequence md5 hash value for a set of sequences")
+	parser.add_argument('infile', metavar='fasta_file',
+		help='file containing one or more sequences in fastA format')
+	parser.add_argument('-o','--output',dest='outfile', metavar='output_file',
+		nargs='?', type=argparse.FileType('w'), default=sys.stdout,
+		help='file to write the md5 values to')
+	args = parser.parse_args()
+
+	# do the calculations
+	calculate_md5(args.infile, args.outfile)
+
+
+if __name__ == '__main__':
+	main()

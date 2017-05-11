@@ -1,0 +1,7 @@
+#!/bin/bash
+
+#  Return a tab-delimited table of sequence names and lengths
+
+input="${1:-/dev/stdin}"
+
+bioawk -c fastx '{ print $name, length($seq) }' $input

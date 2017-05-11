@@ -1,0 +1,11 @@
+#!/bin/bash
+
+#  Return a fasta sequence, folded every 100 characters 
+# 
+#  ** WARNING ** 
+#  When sequences names are over 100 character, this script will probably not return correct sequences.
+# 
+
+input="${1:-/dev/stdin}"
+
+bioawk -c fastx '{ print ">"$name"\n"$seq }' $input | fold -w100

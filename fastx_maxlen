@@ -1,0 +1,21 @@
+#!/bin/bash
+
+#  Return the length of the longest sequence in a fasta/q file
+
+input="${1:-/dev/stdin}"
+
+# bioawk -c fastx 'BEGIN{MAX=0;}{ x=length($seq); MAX = (MAX > x ? MAX : x); }END{ print MAX }' $input
+	
+bioawk -c fastx 'BEGIN{SNAME="";MAX=0} 
+{ 
+	x=length($seq);
+	if(x > MAX){
+		MAX = x
+		SNAME = $name
+	}
+} 
+END{ print SNAME, MAX }' ${input}
+
+
+
+

@@ -1,0 +1,8 @@
+#!/bin/bash
+
+#	Print out the names of all reads in a file (mostly debugging other scripts; not to be used on large files)
+
+input="${1:-/dev/stdin}"
+
+bioawk -c fastx '{ print $name }' $input
+

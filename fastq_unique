@@ -1,0 +1,11 @@
+#!/bin/bash
+
+#	Sort a FastQ file by read name, and keep only unique reads.  This script is a branch of fastq_sort
+#
+#	(WARNING)  Using cat-paste-sort-tr will produce weird results if any of the fastq reads comprise more than 4 lines 
+#
+
+input="${1:-/dev/stdin}"
+
+cat ${input} | paste - - - - | sort -u -k1,1 -t " " | tr "\t" "\n" 
+

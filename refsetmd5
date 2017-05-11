@@ -1,0 +1,35 @@
+#!/bin/bash
+
+#
+#	Calculate order-independent md5 checksum for a set of sequences ("references")
+# 
+# 	n.b. -> specification from GA4GH schema (v0.0.1) https://media.readthedocs.org/pdf/ga4gh-schemas/latest/ga4gh-schemas.pdf
+#
+
+# linux or macos?
+#
+OS="`uname`"
+case $OS in
+  'Linux')
+    _MD5=md5sum
+    ;;
+  'Darwin') 
+    _MD5='md5 -r'
+    ;;
+  *) ;;
+esac
+
+
+
+# Grab input from file or stdin
+#
+# n.b. -> must be a 2-column, tab-delimited file with hashes in the first column and no header, such as the output from ./seqmd5 script
+input="${1:-/dev/stdin}"
+
+
+#	1. sort the list of individual sequence hashes 
+#	2. concatenate the sorted list 
+#	3. compute md5 hash from the resulting string
+#
+sort $input | cut -f1 | paste -s -d \0 - | $_MD5
+
