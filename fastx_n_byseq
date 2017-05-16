@@ -1,0 +1,10 @@
+#!/bin/bash
+
+#  Count the total number of N's per fasta/q sequence
+#  
+#  file: fastx_n_byseq
+
+input="${1:-/dev/stdin}"
+
+bioawk -cfastx '{ SUM=0; SUM+=(gsub(/n|N/,"", $seq)); print $name, SUM }' $input 
+

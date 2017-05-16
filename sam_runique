@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# List the names of all references represented
+#
+# note - this is probably not performant with larger sam files
+
+input="${1:-/dev/stdin}"
+
+bioawk -csam '{ print($rname) }' ${input} | sort | uniq

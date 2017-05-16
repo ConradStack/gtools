@@ -1,0 +1,60 @@
+#!/usr/bin/env python
+#
+#  Split a fasta file in to smaller pieces based various criteria (e.g., hard or soft masking)
+# 
+#
+# File:	fasta_cut
+# Author:	Conrad Stack
+# Email:	conrad.stack@gmail.com
+# --------------------------------------------
+
+# NOTES:
+# For simulated contigs, where there is no chance of overlapping  
+# vector screens, the different in size between the cut 
+# contigs and the pre-cut contigs divided by 20 (or whatever the 
+# vector length is) should be equal to the difference between 
+# the number of cut contigs minus the number of pre-cut contigs:
+# > ( $(count_bps test_cut.fa) - $(count_bps test.fa) ) / 20 == \
+#	( $(count_seqs test_cut.fa) - $(count_seqs test.fa) )
+
+
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
+import argparse, sys, re
+import pyfaidx
+
+
+# main() -> parse command line arguments 
+#
+def main(args):
+	dnaX = re.compile("[^X]+")
+	fasta = pyfaidx.Fasta(args.infile)
+	for key in fasta.keys():
+		fastr=fasta[key][:].seq
+		test = dnaX.finditer(fastr)
+		nsubstr=1 # counter for storing the current substring that is being worked on
+		for gg in test:
+			(ss,se) = gg.span()
+			# print((se-ss))
+			args.outfile.write('>' + key + '.' + str(nsubstr) + '\n')
+			args.outfile.write(str(fasta[key][ss:se]) + '\n')
+			nsubstr += 1
+			# print( str(ss) + " " + str(se))
+
+
+if __name__ == '__main__':
+
+	# process CLI arguments
+	parser = argparse.ArgumentParser(description="'Cut' a fasta file based on masks")
+	parser.add_argument('infile', metavar='input_file',
+		help='file containing one or more sequences in fastA format')
+	parser.add_argument('-o','--output',dest='outfile', metavar='output_file',
+		nargs='?', type=argparse.FileType('w'), default=sys.stdout,
+		help='file to write the split fasta parts too')
+	args = parser.parse_args()
+	#args = parser.parse_args(['-o', '/Users/miamimac2/tmp/test_cut.fa','/Users/miamimac2/tmp/test.fa'])
+	main(args)
+
+
+
