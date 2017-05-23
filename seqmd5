@@ -30,7 +30,7 @@ import hashlib
 
 # Calculate MD5 hashes
 # 
-def calculate_md5(contigs_file, fout):
+def calculate_md5(contigs_file, fout, vv):
 	# open fasta file
 	contigs = pyfaidx.Fasta(contigs_file)
 
@@ -39,7 +39,7 @@ def calculate_md5(contigs_file, fout):
 	# write some metadata in file header:
 	# fout.writestr(datetime.datetime.now())
 	for key in contigs.keys():
-		print(key,file=sys.stderr)
+		if(vv): print(key,file=sys.stderr)
 		# NB -> encode('utf-8') to make it compatible with python 3(.5)
 		tmp = hashlib.md5(contigs[key][:].seq.encode('utf-8').upper()).hexdigest()
 		fout.write(tmp + '\t' + key + '\n')
@@ -56,10 +56,12 @@ def main():
 	parser.add_argument('-o','--output',dest='outfile', metavar='output_file',
 		nargs='?', type=argparse.FileType('w'), default=sys.stdout,
 		help='file to write the md5 values to')
+	parser.add_argument('-v','--verbose',dest='verbose',
+		action='store_true')
 	args = parser.parse_args()
 
 	# do the calculations
-	calculate_md5(args.infile, args.outfile)
+	calculate_md5(args.infile, args.outfile, args.verbose)
 
 
 if __name__ == '__main__':
