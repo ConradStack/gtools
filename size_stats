@@ -1,0 +1,85 @@
+#!/usr/bin/env Rscript --vanilla
+
+#  Calculate N50 and other genome size statistics from a 
+#  table of scaffold sizes
+# 
+# Author:			Conrad Stack
+# Email:			conrad.stack@gmail.com
+# Date Created:	Tue May 23 15:00:50 2017
+# --------------------------------------------
+
+# References ----
+# Liberally borrowed code from the following stackoverflow thread:
+# - https://stackoverflow.com/questions/26152998/how-to-make-r-script-takes-input-from-pipe-and-user-given-parameter
+# ----
+
+# NB -> whether the N50 values that are output
+# 		by this script are "contig N50" or "scaffold N50" values 
+#		depends on what was fed into fastx_lengths:  contigs or scaffolds?
+# 
+
+# Helper functions ----
+
+OpenRead <- function(arg) {
+   if (arg %in% c("-", "/dev/stdin")) {
+      file("stdin", open = "r")
+   } else if (grepl("^/dev/fd/", arg)) {
+      fifo(arg, open = "r")
+   } else {
+      file(arg, open = "r")
+   }
+}
+
+# ----
+
+
+# parse command line arguments
+require(docopt, quietly = TRUE, warn.conflicts=FALSE)
+doc.str = "Usage: size_stats [options] [--] <input1>"
+opt.str = 
+"Options:
+ -o OUT, --output OUT  (NOT IMPLEMENTED) A file prefix that is used for the programs temporary and final output
+ input1  A 2-column, tab-delimited table with no header where the first column contains a list of sequence names and the second column contains the size of each sequence
+"
+docopt.str = sprintf("%s\n%s",doc.str,opt.str)
+
+# DEBUG ----
+# doc.args = docopt( docopt.str, "scaffold.sizes" ,strict=FALSE)
+# ----
+
+# Parse CLI arguments
+doc.args = docopt(docopt.str, strict=FALSE)
+infile = OpenRead(doc.args$input1)
+
+# Input should be a 2-column table, formatted like the output from fastx_lengths
+test = read.table(infile, col.names=c("sequence","length"))
+test = test[order(test[,2],decreasing=TRUE),]
+test$csum = cumsum(test[,2])
+
+# Count the number of sequences which total approximately half of all assembled bases
+total.bp = sum(test[,2])
+ind50 = which.min( abs(test$csum - (total.bp / 2)) )
+if(test$csum[ind50] < (total.bp / 2)) ind50 = ind50 + 1
+ind90 = which.min( abs(test$csum - (total.bp * 0.9)) )
+if(test$csum[ind90] < (total.bp * 0.9)) ind90 = ind90 + 1
+ind95 = which.min( abs(test$csum - (total.bp * 0.95)) )
+if(test$csum[ind95] < (total.bp * 0.95)) ind95 = ind95 + 1
+
+
+#sum(test[1:ind50,2])
+#sum(test[-(1:ind50),2])
+
+out.tab <- data.frame(
+	total.bp,
+	seqcount = nrow(test),
+	N50.seqcount = ind50,
+	N90.seqcount = ind90,
+	N95.seqcount = ind95,
+	N50 = test$length[ind50],
+	N90 = test$length[(ind90)],
+	N95 = test$length[(ind95)],
+	N50.exact = sum(test[1:ind50,2]) / total.bp
+	)
+
+# Write to stdout()
+write.table(out.tab,file=stdout(),sep="\t",col.names=TRUE,row.names=F,quote=F)
