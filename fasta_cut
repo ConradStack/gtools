@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 #
-#  Split a fasta file in to smaller pieces based various criteria (e.g., hard or soft masking)
+#  Split ("cut") a fasta file in to smaller pieces based various criteria (e.g., hard or soft masking)
 # 
-#
 # File:	fasta_cut
 # Author:	Conrad Stack
 # Email:	conrad.stack@gmail.com
 # --------------------------------------------
+
+
 
 # NOTES:
 # For simulated contigs, where there is no chance of overlapping  
@@ -23,24 +24,48 @@ from __future__ import unicode_literals
 
 import argparse, sys, re
 import pyfaidx
+from textwrap import TextWrapper
 
 
 # main() -> parse command line arguments 
 #
 def main(args):
-	dnaX = re.compile("[^X]+")
+	wrapper = TextWrapper(width=80)
+
+	# Build splitting pattern, starting with the flags
+	re_flags = re.I if args.icase else 0
+	dnaX = re.compile(
+			"[{0}]{{{1},}}".format(args.pattern, args.minlen), 
+			re_flags )
+
+	if(args.verbose): print(dnaX) # VERBOSE
+
+	# Load sequences from fasta file
 	fasta = pyfaidx.Fasta(args.infile)
+
+	# Loop over each sequence
 	for key in fasta.keys():
-		fastr=fasta[key][:].seq
-		test = dnaX.finditer(fastr)
-		nsubstr=1 # counter for storing the current substring that is being worked on
-		for gg in test:
-			(ss,se) = gg.span()
-			# print((se-ss))
-			args.outfile.write('>' + key + '.' + str(nsubstr) + '\n')
-			args.outfile.write(str(fasta[key][ss:se]) + '\n')
-			nsubstr += 1
-			# print( str(ss) + " " + str(se))
+
+		nsubstr = 1 # counter for storing the current substring that is being worked on
+		
+		if(args.verbose): print(key) # VERBOSE
+		
+		# Split the current sequence on the specified 
+		# pattern, dnaX, then loop over the results
+		for subfa in dnaX.split( fasta[key][:].seq ):
+
+			#  if subsequence is not an empty string
+			if(subfa):
+
+				# Write new fasta header for this subsequence to output file
+				args.outfile.write('>' + key + '.c' + str(nsubstr) + '\n')
+
+				# Write wrapped subsequence for output file
+				wrap_seq = "\n".join(wrapper.wrap( subfa ))
+				args.outfile.write( wrap_seq + '\n')
+
+				# increment subsequence count
+				nsubstr += 1
 
 
 if __name__ == '__main__':
@@ -53,10 +78,31 @@ if __name__ == '__main__':
 		nargs='?', type=argparse.FileType('w'), default=sys.stdout,
 		help='file to write the split fasta parts too')
 	parser.add_argument('-v','--verbose',dest='verbose',
-		action='store_true')
+		action='store_true',
+		help="verbose output (mostly for debugging)")
+	parser.add_argument('-i','--ignore-case',dest='icase',
+		action='store_true',
+		help="ignore case when splitting on PATTERN")
+	parser.add_argument('-p','--pattern',dest='pattern', 
+		action='store',
+		default="N",type=str,
+		help="Pattern to split on.  The regular expression that is used to split the fastA sequence is [PATTERN]{MINLEN,}")
+	parser.add_argument('-m','--minlen',dest='minlen', 
+		action='store', type=int,
+		default=10,
+		help="Specify the minimum length of a pattern match to split on. This is useful when short runs of non-gapping N's are present in the sequence.  Runs of N's (or PATTERN) longer than this are effectively removed from the output file")
+	
 	args = parser.parse_args()
+	
+	# VERBOSE
+	if(args.verbose): print( args )
+
 	#args = parser.parse_args(['-o', '/Users/miamimac2/tmp/test_cut.fa','/Users/miamimac2/tmp/test.fa'])
 	main(args)
 
 
 
+# Acknowledgements:
+# --------------------------------------------
+# TextWrapper code from the following stackoverflow thread:
+# - https://stackoverflow.com/questions/15666990/how-would-one-limit-characters-per-line-when-printing-a-raw-input-to-a-text-file
