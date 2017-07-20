@@ -1,0 +1,11 @@
+#!/bin/bash
+
+#  Count the total number of X's in all fasta/q sequences
+#  
+#  file: fastx_x
+
+
+input="${1:-/dev/stdin}"
+
+bioawk -cfastx 'BEGIN{ SUM=0 }{  SUM+=(gsub(/x|X/,"", $seq)) }END{ print SUM }' $input 
+

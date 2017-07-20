@@ -1,0 +1,73 @@
+#!/usr/bin/env python
+#
+# 	Return a table of all "gap" positions found in a fasta file
+# 
+# File:	fasta_cut
+# Author:	Conrad Stack
+# Email:	conrad.stack@gmail.com
+# -----------------------------------------------------------------
+
+
+# NOTES:
+# 
+
+
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
+import argparse, sys, re
+import pyfaidx
+
+# main() -> parse command line arguments 
+#
+def main(args):
+	
+	# write a header line (if wanted)
+	if(not args.noheader):
+		args.outfile.write("sequence\tstart\tend\twidth\n")
+
+	# construct pattern string
+	pattern_string = ("[%s]{%d,}") % (args.gapchar,args.minlen)
+	if(args.verbose): print(pattern_string)
+	dnaX=re.compile( pattern_string )
+	
+	# open fasta file and part
+	fasta = pyfaidx.Fasta(args.infile)
+	for key in fasta.keys():
+		fastr=fasta[key][:].seq
+		test = dnaX.finditer(fastr)
+		nsubstr=1 # counter for storing the current substring that is being worked on
+		for gg in test:
+			(ss,se) = gg.span()
+			out_line = ("%s\t%d\t%d\t%d") % (key,(ss+1),se, (se-ss))
+			args.outfile.write( out_line + '\n' )
+
+
+if __name__ == '__main__':
+	# process CLI arguments
+	parser = argparse.ArgumentParser(description="'Cut' a fasta file based on masks")
+	parser.add_argument('infile', metavar='input_file',
+		help='file containing one or more sequences in fastA format')
+	parser.add_argument('-o','--output',dest='outfile', metavar='output_file',
+		nargs='?', type=argparse.FileType('w'), default=sys.stdout,
+		help='file to write the split fasta parts too')
+	parser.add_argument('-v','--verbose',dest='verbose',
+		action='store_true')
+	parser.add_argument('-nh','--noheader',dest='noheader',
+		action='store_true')
+	parser.add_argument('-g','--gapchar',dest='gapchar', 
+		action='store',
+		default="N",type=str,
+		help="character representing a gap")
+	parser.add_argument('-m','--minlen',dest='minlen', 
+		action='store', type=int,
+		default=10,
+		help="Minimum number of gapchar in series to consider the run a gap.")
+	
+	# TODO 
+	args = parser.parse_args()
+	if(args.verbose): print(args)
+	#args = parser.parse_args(['-o', '/Users/miamimac2/tmp/test_cut.fa','/Users/miamimac2/tmp/test.fa'])
+	main(args)
+
+

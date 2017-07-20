@@ -1,10 +1,11 @@
 #!/bin/bash
 
-#  Count the total number of N's per fasta/q sequence
-#  
+#  (DEPRECATED) Count the total number of N's per fasta/q sequence
+#  (DEPRECATED) - use fastx_stats instead
+#
 #  file: fastx_n_byseq
 
 input="${1:-/dev/stdin}"
 
-bioawk -cfastx '{ SUM=0; SUM+=(gsub(/n|N/,"", $seq)); print $name, SUM }' $input 
+bioawk -cfastx '{ SUM=0; SUM+=(gsub(/n|N/,"", $seq)); TOTAL=(length($seq)+SUM); print $name, TOTAL, SUM, (SUM / TOTAL) }' $input 
 
