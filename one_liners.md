@@ -52,19 +52,26 @@ fastx_stats input.fasta | datamash --header-in min 2 max 2
 
 #### PacBio
 ##### Get the names of some pacbio subreads, split each name in to discrete parts (delimited by forward slashes), and calculate how many ZMWs are represented. 
+```
 fastx_names m160611_100724_42219_c101002732550000001823227509161692_s1_p0.1.subreads.fasta | cut -d/ -f2 | sort | uniq | wc -l
+```
 
 ## Data manipulation
 
 ##### Sort a table on column 4 (numeric), excluding its (single) header row 
+```
 (head -n 1 tmp.txt && tail -n +2 tmp.txt | sort -t$'\t' -k4,4 -n )
+```
 
 ## Sysadmin
 
 #### List all immediate subdirectories of the current working directory
+```
 find ./* -maxdepth 0 -type d
+```
 
 #### Clear contents of a file 
+```
 `> ${OUT_FILE}  # clear contents`
-
+```
 
