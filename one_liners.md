@@ -30,18 +30,25 @@ fasta_gaps -g "x|X" -m 5 -nh test.fa | wc -l
 
 #### Count the number and fraction of N's in each sequence, then sort the output table by the 4th column (numerically)
 ```
+# use of fastx_n_byseq is DEPRECATED; use fastx_stats instead
 fastx_n_byseq herrania-families-test.fa | sort -t$'\t' -k4,4 -n
 ```
 
 #### Read in a file and add a line break every 200 characters
+```
 fold -w200 input.fasta
+```
 
 #### Return the size of the smallest and largest sequences in a fastQ file
+```
 bioawk -cfastx '{ print length($seq) }' ${input} | datamash min 1 max 1
 
-##### The same as above, but returning quantiles 
+# same as above, but returning quantiles 
 bioawk -cfastx '{ print length($seq) }' ${input} | datamash min 1 q1 1 median 1 q3 1 max 1
 
+# or use fastx_stats script
+fastx_stats input.fasta | datamash --header-in min 2 max 2
+```
 
 #### PacBio
 ##### Get the names of some pacbio subreads, split each name in to discrete parts (delimited by forward slashes), and calculate how many ZMWs are represented. 
