@@ -14,8 +14,8 @@
 # TODO / Issues:
 # 
 # 	[]	Make the script compatible with multiline fastA files (e.g., pre-condition the fastA file using fasta_fold script)
-# 	[]	Edit the option parser so that the default output is to stdout
-# 	[]	Edit the option parser so that fasta input can come from a file or pipe
+# 	[x]	Edit the option parser so that the default output is to stdout
+# 	[n/a]	(not really possible with faidx, unless temporary file is written) Edit the option parser so that fasta input can come from a file or pipe 
 
 
 # -*- coding: utf-8 -*-
@@ -35,9 +35,6 @@ def calculate_md5(contigs_file, fout, vv):
 	contigs = pyfaidx.Fasta(contigs_file)
 
 	# loop through fasta sequences, writing sequence hashes to the output file
-	#with open(md5file,"w") as fout:
-	# write some metadata in file header:
-	# fout.writestr(datetime.datetime.now())
 	for key in contigs.keys():
 		if(vv): print(key,file=sys.stderr)
 		# NB -> encode('utf-8') to make it compatible with python 3(.5)
