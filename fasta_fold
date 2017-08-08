@@ -9,3 +9,5 @@
 input="${1:-/dev/stdin}"
 
 bioawk -c fastx '{ print ">"$name"\n"$seq }' $input | fold -w100
+
+

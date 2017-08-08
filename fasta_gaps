@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# 	Return a table of all "gap" positions found in a fasta file
+# 	Return a (bed-formatted) table of all "gap" positions found in a fasta file
 # 
 # File:	fasta_cut
 # Author:	Conrad Stack
@@ -23,7 +23,7 @@ import pyfaidx
 def main(args):
 	
 	# write a header line (if wanted)
-	if(not args.noheader):
+	if(args.header):
 		args.outfile.write("sequence\tstart\tend\twidth\n")
 
 	# construct pattern string
@@ -39,7 +39,8 @@ def main(args):
 		nsubstr=1 # counter for storing the current substring that is being worked on
 		for gg in test:
 			(ss,se) = gg.span()
-			out_line = ("%s\t%d\t%d\t%d") % (key,(ss+1),se, (se-ss))
+			#out_line = ("%s\t%d\t%d\t%d") % (key,(ss+1),se, (se-ss))
+			out_line = ("%s\t%d\t%d\t%d") % (key,(ss),se, (se-ss))
 			args.outfile.write( out_line + '\n' )
 
 
@@ -53,7 +54,7 @@ if __name__ == '__main__':
 		help='file to write the split fasta parts too')
 	parser.add_argument('-v','--verbose',dest='verbose',
 		action='store_true')
-	parser.add_argument('-nh','--noheader',dest='noheader',
+	parser.add_argument('-H','--header',dest='header',
 		action='store_true')
 	parser.add_argument('-g','--gapchar',dest='gapchar', 
 		action='store',
