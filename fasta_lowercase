@@ -1,0 +1,90 @@
+#!/usr/bin/env python3
+
+
+from __future__ import unicode_literals
+# -*- coding: utf-8 -*-
+
+"""
+Created on Sun Feb  5 13:44:46 2017
+
+@description: 
+    Find all lowercase characters in a fasta sequence and 
+     output a gff3-formatted file containing an annotation 
+     for each contiguous string of lowercase nucleotides
+
+@author: Conrad Stack
+"""
+
+import argparse, sys, re
+from pyfaidx import * 
+
+# TODO:
+# - decide if output should include runs of N's
+
+def main(args):
+
+    # Create regular expression to find runs of lowercase characters
+    dnal_pattern = "atcgn"
+    dnal = re.compile( ("[%s]{%d,}") % (dnal_pattern, args.minlen) )
+    if(args.verbose):
+        print(dnal, file=sys.stderr)
+    # dnal = re.compile("[atcgn]+") # lowercase
+    # dnau = re.compile("[ATCGN]+") # uppercase
+    
+
+    # Global strings for formatting output
+    header = '''##gff-version 3
+    ##source-version pyfaidx 0.4.8.1
+    '''
+    entry = "%s\tfasta_lowercase\tmisc_feature\t%d\t%d\t.\t.\t.\tName=%s\n"
+
+    # Read fasta file
+    fa = Fasta(args.infile)
+
+    # write header to output file:
+    args.outfile.write(header)
+    # iterate through fasta sequences
+    for key in fa.keys():
+        
+        if(args.verbose):
+            print(key, file=sys.stderr)
+
+        # Find lowercase runs and write their coordinates to gff table
+        contig = fa[key][:].seq
+        lowercase = dnal.finditer(contig)
+        cc = 1
+        for gg in lowercase:
+            (ss, se) = gg.span()
+            args.outfile.write( entry % (key, ss+1, se, (key+"."+str(cc))) )
+            cc += 1
+        
+
+
+if __name__ == '__main__':
+
+    # process CLI arguments
+    parser = argparse.ArgumentParser(description="'Cut' a fasta file based on masks")
+    parser.add_argument('infile', metavar='input_file',
+        help='file containing one or more sequences in fastA format')
+    parser.add_argument('-o','--output', dest='outfile', metavar='output_file',
+        nargs='?', type=argparse.FileType('w'), default=sys.stdout,
+        help='file to write the split fasta parts too')
+    parser.add_argument('-v','--verbose',dest='verbose',
+        action='store_true',
+        help="verbose output (mostly for debugging)")
+    parser.add_argument('-i','--ignore-case',dest='icase',
+        action='store_true',
+        help="ignore case when splitting on PATTERN")
+    parser.add_argument('-m','--minlen',dest='minlen', 
+        action='store', type=int,
+        default=3,
+        help="Specify the minimum length of a pattern match to split on. This is useful when short runs of non-gapping N's are present in the sequence.  Runs of N's (or PATTERN) longer than this are effectively removed from the output file")
+    
+    args = parser.parse_args()
+    
+    # VERBOSE
+    if(args.verbose): print( args )
+
+    #args = parser.parse_args(['-o', '/Users/miamimac2/tmp/test_cut.fa','/Users/miamimac2/tmp/test.fa'])
+    main(args)
+

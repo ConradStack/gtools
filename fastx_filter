@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# Filter fastq reads by length
+
+# parse arguments
+MINLEN=500
+while getopts "l:" option
+do
+ case "${option}" in
+ l) MINLEN=${OPTARG}
+shift $((OPTIND-1))
+;;	
+ esac
+done
+
+# echo "Argument MINLEN: $MINLEN"
+# echo "Argument OPTIND: ${OPTIND}"
+# echo "Argument OPTIND: ${@}"
+
+# I'm not sure, but bioawk might loose precision on large data sets (TODO: check this)
+bioawk -c fastx -v minlen=${MINLEN} '{ 
+if(length($seq) >= minlen){
+	if(length($qual) != 0){
+		print "@"$name"\n"$seq"\n+"$comment"\n"$qual 
+	} else {
+		print ">"$name"\n"$seq
+	}
+}
+}' $@
+
+
+
+

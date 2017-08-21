@@ -1,0 +1,11 @@
+#!/bin/bash
+
+#  Trim leading and trailing N's from fasta sequences
+
+input="${1:-/dev/stdin}"
+
+bioawk -c fastx '{ 
+sub(/^[n|N]+/,"", $seq); # ltrim
+sub(/[n|N]+$/,"", $seq); # rtrim
+print ">"$name; print $seq 
+}' $input
