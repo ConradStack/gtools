@@ -2,23 +2,36 @@
 
 # Filter fastq reads by length
 
+# ARGUMENTS:
+# -l INT 	The minimum length of sequences to output (default: 0)
+# -n INT	Stop after processing this many reads.  When a negative value is given, all reads are processed (default: -1)
+
+
 # parse arguments
-MINLEN=500
-while getopts "l:" option
+MINLEN=0
+NREADS=-1
+while getopts "l:n:" option
 do
  case "${option}" in
  l) MINLEN=${OPTARG}
+shift $((OPTIND-1))
+;;
+ n) NREADS=${OPTARG}
 shift $((OPTIND-1))
 ;;	
  esac
 done
 
 # echo "Argument MINLEN: $MINLEN"
+# echo "Argument NREADS: $NREADS"
 # echo "Argument OPTIND: ${OPTIND}"
-# echo "Argument OPTIND: ${@}"
+# echo "Argument else:: ${@}"
 
-# I'm not sure, but bioawk might loose precision on large data sets (TODO: check this)
-bioawk -c fastx -v minlen=${MINLEN} '{ 
+
+bioawk -c fastx -v minlen=${MINLEN} -v maxreads=${NREADS} '{
+if( maxreads > 0 && NR > maxreads ){ 
+	exit 0;
+}
 if(length($seq) >= minlen){
 	if(length($qual) != 0){
 		print "@"$name"\n"$seq"\n+"$comment"\n"$qual 
@@ -26,7 +39,9 @@ if(length($seq) >= minlen){
 		print ">"$name"\n"$seq
 	}
 }
+
 }' $@
+
 
 
 
