@@ -5,38 +5,45 @@
 # ARGUMENTS:
 # -l INT 	The minimum length of sequences to output (default: 0)
 # -n INT	Stop after processing this many reads.  When a negative value is given, all reads are processed (default: -1)
-
+# -q FLOAT 	The minimum average quality score of sequences to output (default: 0)
 
 # parse arguments
 MINLEN=0
 NREADS=-1
-while getopts "l:n:" option
+MINQUAL=0
+while getopts "l:n:q:" option
 do
  case "${option}" in
  l) MINLEN=${OPTARG}
-shift $((OPTIND-1))
+#shift $((OPTIND-1))
 ;;
  n) NREADS=${OPTARG}
-shift $((OPTIND-1))
+#shift $((OPTIND-1))
+;;	
+ q) MINQUAL=${OPTARG}
+#shift $((OPTIND-1))
 ;;	
  esac
 done
 
+shift $((OPTIND-1))
 # echo "Argument MINLEN: $MINLEN"
 # echo "Argument NREADS: $NREADS"
 # echo "Argument OPTIND: ${OPTIND}"
 # echo "Argument else:: ${@}"
 
 
-bioawk -c fastx -v minlen=${MINLEN} -v maxreads=${NREADS} '{
-if( maxreads > 0 && NR > maxreads ){ 
+bioawk -c fastx -v minlen=${MINLEN} -v maxreads=${NREADS} -v minaqaul=${MINQUAL} '{
+if( maxreads >= 0 && NR > maxreads ){ 
 	exit 0;
 }
 if(length($seq) >= minlen){
 	if(length($qual) != 0){
-		print "@"$name"\n"$seq"\n+"$comment"\n"$qual 
+		if(meanqual($qual) >= minaqaul){
+			print "@"$name" "$comment"\n"$seq"\n+\n"$qual 
+		}
 	} else {
-		print ">"$name"\n"$seq
+		print ">"$name" "$comment"\n"$seq
 	}
 }
 
