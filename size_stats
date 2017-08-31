@@ -1,4 +1,4 @@
-#!/usr/bin/env Rscript --vanilla
+#!/usr/bin/env Rscript
 
 #  Calculate N50 and other genome size statistics from a 
 #  table of scaffold sizes
@@ -52,7 +52,7 @@ doc.args = docopt(docopt.str, strict=FALSE)
 infile = OpenRead(doc.args$input1)
 
 # Input should be a 2-column table, formatted like the output from fastx_lengths
-test = read.table(infile, col.names=c("sequence","length"))
+test = read.table(infile, col.names=c("sequence","length"), colClasses = c("character","numeric"))
 test = test[order(test[,2],decreasing=TRUE),]
 test$csum = cumsum(test[,2])
 
@@ -72,13 +72,16 @@ if(test$csum[ind95] < (total.bp * 0.95)) ind95 = ind95 + 1
 out.tab <- data.frame(
 	total.bp,
 	seqcount = nrow(test),
-	N50.seqcount = ind50,
-	N90.seqcount = ind90,
-	N95.seqcount = ind95,
+	longest_read = max(test$length),
+	shortest_read = min(test$length),
+	median_read = median(test$length),
 	N50 = test$length[ind50],
 	N90 = test$length[(ind90)],
 	N95 = test$length[(ind95)],
-	N50.exact = sum(test[1:ind50,2]) / total.bp
+        L50 = ind50,
+        L90 = ind90,
+        L95 = ind95,
+	N50.exact = sprintf("%0.4f",sum(test[1:ind50,2]) / total.bp)
 	)
 
 # Write to stdout()
