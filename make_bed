@@ -5,6 +5,6 @@
 
 input="${1:-/dev/stdin}"
 
-bioawk -cfastx '{print $name,1, length($seq)}' $input
+bioawk -cfastx '{print $name, 0, length($seq)}' $input
 
 
