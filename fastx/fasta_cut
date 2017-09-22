@@ -97,7 +97,6 @@ if __name__ == '__main__':
 	# VERBOSE
 	if(args.verbose): print( args )
 
-	#args = parser.parse_args(['-o', '/Users/miamimac2/tmp/test_cut.fa','/Users/miamimac2/tmp/test.fa'])
 	main(args)
 
 

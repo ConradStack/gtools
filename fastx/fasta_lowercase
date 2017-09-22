@@ -42,7 +42,10 @@ def main(args):
     fa = Fasta(args.infile)
 
     # write header to output file:
-    args.outfile.write(header)
+    #args.outfile.write(header)
+    args.outfile.write("##gff-version 3\n")
+    args.outfile.write("##source-version pyfaidx 0.4.8.1\n")
+
     # iterate through fasta sequences
     for key in fa.keys():
         
