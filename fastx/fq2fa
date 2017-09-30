@@ -5,5 +5,5 @@
 input="${1:-/dev/stdin}"
 
 # I'm not sure, but bioawk might loose precision on large data sets (TODO: check this)
-bioawk -c fastx '{ print ">"$name"\n"$seq }' $input
+bioawk -c fastx '{ print ">"$name" "$comment"\n"$seq }' $input
 
