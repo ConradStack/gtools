@@ -1,0 +1,70 @@
+#!/bin/bash
+#
+#  Partition reads based on name (and other criteria?)
+# 
+# File:	fastx_partition
+# Author:	Conrad Stack
+# Email:	conrad.stack@gmail.com
+# --------------------------------------------
+
+## USAGE
+# fastx_partition -r read.list <test.fasta/q>
+
+# ARGUMENTS:
+# -r <file>  file containing a list of read names to match against
+# <test.fasta/q> 	fasta/q file to partition in to matched and unmatched reads
+
+# parse arguments
+READLIST=""
+while getopts "r:" option
+do
+ case "${option}" in
+ r) READLIST=${OPTARG}
+#shift $((OPTIND-1))
+;;
+ esac
+done
+
+shift $((OPTIND-1))
+# echo "Argument READLIST: \"$READLIST\""
+# echo "Argument else: \"${@}\""
+# echo "Argument n: ${#}"
+
+
+## PROCEDURE
+
+# check file path arguments
+if [ -n "$READLIST" ] && [ -e "$READLIST" ] && [ "${#}" -eq 1 ] && [ -e "${@}" ]
+then
+
+	
+	# create output file names based on input file names
+	extension="${@##*.}"
+	filename="${@%.*}"
+	extension_rl="$(basename ${READLIST##*.})"
+	filename_rl="$(basename ${READLIST%.*})"
+	match_out=${filename}.${filename_rl}_matched.${extension}
+	unmatch_out=${filename}.${filename_rl}_unmatched.${extension}
+	
+	# 
+	_TMP=$(mktemp)  # temporary file for storing setdiff read list
+	#_TMP=junk.tmp
+
+	echo -n "- Extract matching reads to ${match_out}"
+	seqtk subseq ${@} ${READLIST} > ${match_out}  # the reads whose name is in read.list
+	echo " ... done"
+
+	#echo -n "- Extract setdiff of read names to ${_TMP}"
+	echo -n "- Extract setdiff of read names to temporary file"
+	comm -23 <(fastx_names ${@} | sort) <(sort ${READLIST}) > ${_TMP}
+	echo " ... done"
+
+	echo -n "- Extract unmatched reads to ${unmatch_out}"
+	seqtk subseq ${@} ${_TMP} > ${unmatch_out}  # the reads whose name is not in read.list
+	echo " ... done"
+else
+	echo "Arguments not provided or file paths do not exist"
+fi
+
+
+
