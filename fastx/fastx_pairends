@@ -1,0 +1,49 @@
+#!/bin/bash
+
+# Make pairs of sequences from the opposite ends of long reads
+
+# ARGUMENTS:
+# -l INT 	The length of each read pair, L
+
+# NOTES:
+# - Output reads as interleaved pairs in illumina-style Forward-Reverse ('innie') orientation
+# - Allow no overlap between the two pairs (minimum sequence length == 2*L)
+# - MINLEN variable names is a misnomer, ignore it
+
+# parse arguments
+MINLEN=0
+while getopts "l:" option
+do
+ case "${option}" in
+ l) MINLEN=${OPTARG}
+#shift $((OPTIND-1))
+;;
+ esac
+done
+
+shift $((OPTIND-1))
+# echo "Argument MINLEN: $MINLEN"  # 
+# echo $@
+
+bioawk -c fastx -v minlen=${MINLEN} '{
+slen=length($seq)
+
+if(slen >= (minlen*2)){
+	seqhead=substr($seq, 0, minlen)
+	seqtail=revcomp(substr($seq, (slen-minlen+1), slen))
+
+	if(length($qual) != 0){
+		qualhead=substr($qual, 0, minlen)
+		qualtail=revcomp(substr($qual, (slen-minlen+1), slen))
+
+		print "@"$name"/1\n"seqhead"\n+\n"qualhead
+		print "@"$name"/2\n"seqtail"\n+\n"qualtail
+	} else {
+		print ">"$name"/1\n"seqhead
+		print ">"$name"/2\n"seqtail
+	}
+}
+
+}' $@
+
+

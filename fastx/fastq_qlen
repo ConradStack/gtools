@@ -1,0 +1,8 @@
+#!/bin/bash
+
+#  Return a tab-delimited table with one row per sequence, listing the sequence name, length, mean base quality, and GC fraction
+
+input="${1:-/dev/stdin}"
+
+bioawk -c fastx '{ print $name, length($seq), meanqual($qual), gc($seq) }' $input
+
