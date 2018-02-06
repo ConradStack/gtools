@@ -1,17 +1,15 @@
 #!/bin/bash
 
-# Make pairs of sequences from the opposite ends of long reads
+# A script that generates synthetic read pairs from opposing ends of each input sequence (e.g., each contig or scaffold of a genome assembly)
 
 # ARGUMENTS:
-# -l INT 	The length of each read pair, L
+# -l INT 	The length of each read pair, L (default: 1000).  Read pairs that overlap are not generated, so the effective minimum size of input sequences is 2*L
 
 # NOTES:
-# - Output reads as interleaved pairs in illumina-style Forward-Reverse ('innie') orientation
-# - Allow no overlap between the two pairs (minimum sequence length == 2*L)
-# - MINLEN variable names is a misnomer, ignore it
+# - Output reads pairs are interleaved in illumina-style Forward-Reverse ('innie') orientation
 
 # parse arguments
-MINLEN=0
+MINLEN=1000
 while getopts "l:" option
 do
  case "${option}" in
@@ -45,5 +43,6 @@ if(slen >= (minlen*2)){
 }
 
 }' $@
+
 
 
