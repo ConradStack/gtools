@@ -6,3 +6,4 @@ input="${1:-/dev/stdin}"
 
 bioawk -c fastx '{ print $name }' $input
 
+# bioawk -c fastx '{ print $name" "$comment }' $input

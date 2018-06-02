@@ -66,22 +66,19 @@ def main(args):
 if __name__ == '__main__':
 
     # process CLI arguments
-    parser = argparse.ArgumentParser(description="'Cut' a fasta file based on masks")
+    parser = argparse.ArgumentParser(description="Find all lowercase characters in a fasta sequence and output a gff3-formatted file containing an annotation for each contiguous string of lowercase nucleotides")
     parser.add_argument('infile', metavar='input_file',
         help='file containing one or more sequences in fastA format')
     parser.add_argument('-o','--output', dest='outfile', metavar='output_file',
         nargs='?', type=argparse.FileType('w'), default=sys.stdout,
-        help='file to write the split fasta parts too')
+        help='output file name')
     parser.add_argument('-v','--verbose',dest='verbose',
         action='store_true',
         help="verbose output (mostly for debugging)")
-    parser.add_argument('-i','--ignore-case',dest='icase',
-        action='store_true',
-        help="ignore case when splitting on PATTERN")
     parser.add_argument('-m','--minlen',dest='minlen', 
         action='store', type=int,
         default=3,
-        help="Specify the minimum length of a pattern match to split on. This is useful when short runs of non-gapping N's are present in the sequence.  Runs of N's (or PATTERN) longer than this are effectively removed from the output file")
+        help="Specify the minimum consecutive number of lowercase characters to annotate. ")
     
     args = parser.parse_args()
     

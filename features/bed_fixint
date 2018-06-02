@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# Fix intervals with a negative range (i.e., where it's starting position is greater than it's ending position)
+# 
+# nb -> uses bioawk
+#
+# TODO:
+# []	Also flip the strand, if it is not empty
+
+input="${1:-/dev/stdin}"
+
+bioawk -cbed '{
+	if( $end < $start ){
+		TMP = $end
+		$end = $start
+		$start = TMP
+	}
+	print $0
+}' $input
+
+
+

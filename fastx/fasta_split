@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# Split multi-fasta file into individual 
+
+FASTA="${1:-merged_maps.chr.fasta}"
+OUTDIR="${2:-split}" && mkdir -p ${OUTDIR}
+TEMPFILE=$(mktemp)
+
+for i in $(fastx_names ${FASTA}); do
+	echo ${i} >| ${TEMPFILE}
+	seqtk subseq ${FASTA} ${TEMPFILE} > ${OUTDIR}/${i}.fasta
+done
+

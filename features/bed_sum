@@ -6,4 +6,4 @@
 
 input="${1:-/dev/stdin}"
 
-bioawk -cbed '{SUM += ($end-$start+1) } END {print SUM}' $input
+bioawk -cbed '{SUM += ($end-$start) } END {print SUM}' $input
