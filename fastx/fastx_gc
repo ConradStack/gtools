@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# Get GC count and proportion in a multi-fastx file
+
+input="${1:-/dev/stdin}"
+
+bioawk -cfastx 'BEGIN{ 
+    totalbp = 0; totalGC = 0; 
+}{  
+    totalbp+=length($seq)
+    totalGC+=( gc($seq) * length($seq) )
+}
+END{
+    print totalbp"\t"totalGC"\t"( totalGC / totalbp )
+}' $input
+
+
