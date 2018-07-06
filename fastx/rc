@@ -1,10 +1,15 @@
 #!/bin/bash
 
-# Return reverse-complement (rc) of an input fasta sequence 
+# Return reverse-complement (rc) of an input DNA string literal 
 
 input="${1:-/dev/stdin}"
 
-bioawk -c fastx '{print ">"$name;print revcomp($seq)}' ${input}
+#bioawk -c fastx '{print ">"$name;print revcomp($seq)}' ${input}
+echo ${input} | bioawk '{print revcomp($0)}' 
+
+# useage:
+#> rc "TCAG" 
+#CTGA
 
 
 

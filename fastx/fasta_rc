@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# Return reverse-complement (rc) of input fasta sequences 
+
+input="${1:-/dev/stdin}"
+
+bioawk -c fastx '{print ">"$name;print revcomp($seq)}' ${input}
+
+
+
