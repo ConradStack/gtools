@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-# (experimental) Calculate the setdiff() of two sets of sequences, returning the items that are unique in the first set 
+# (experimental) Calculate the setdiff() of two sets of sequences, returning sequence names unique to the first set 
 
 
 if [[ $# -ne 2 ]]; then
@@ -12,4 +12,12 @@ else
 	<(fastx_names ${1} | sort) \
 	<(fastx_names ${2} | sort)
 fi
+
+
+# Examples:
+
+## extract the sequences from first set:
+#> fastx_setdiff s1.fasta s2.fasta > s1_unique.txt
+#> seqtk subseq s1.fasta s1_unique.txt > s1_unique.fasta
+
 
