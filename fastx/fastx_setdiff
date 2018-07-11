@@ -1,0 +1,15 @@
+#!/bin/bash
+
+
+# (experimental) Calculate the setdiff() of two sets of sequences, returning the items that are unique in the first set 
+
+
+if [[ $# -ne 2 ]]; then
+	echo "Two arguments are required" > /dev/stderr
+else
+	# print sequence names unique to the first file
+	comm -23 \
+	<(fastx_names ${1} | sort) \
+	<(fastx_names ${2} | sort)
+fi
+
