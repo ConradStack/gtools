@@ -1,26 +1,23 @@
 #!/bin/bash
 
-#  Count the total number of N's, X's, and BP per fasta/q sequence
-#  (includes a header line as well)
+#  Calculates size statistics of the sequence in a fastx file.
 #  
 #  file: fastx_stats
 
 input="${1:-/dev/stdin}"
 
-bioawk -cfastx 'BEGIN{ 
-	totalbp = 0; totalN = 0; totalX = 0;
-	print "seqname", "sumbp", "sumn", "fracn", "sumx", "fracx", "meanqual"
-} 
-{ 
-	TOTAL=length($seq);
-	SUMN=0; SUMX=0; 
-	SUMN+=(gsub(/n|N/,"", $seq));
-	SUMX+=(gsub(/x|X/,"", $seq));
-	totalN+=SUMN;
-	totalX+=SUMX;
-	totalbp+=TOTAL
-	print $name, TOTAL, SUMN, (SUMN / TOTAL), SUMX, (SUMX / TOTAL), meanqual($qual)
-} END { 
-	print "_ALL_", totalbp, totalN, (totalN / totalbp), totalX, (totalX / totalbp) > "/dev/stderr"
-}' $input 
+output=/dev/null
+if [[ -f $input ]]; then
+    _tmp2=${input}
+    if [[ ${input} == *.gz ]]; then
+        _tmp2=${input%.gz}
+    fi
+    if [[ ! -s ${_tmp2}.stats ]]; then
+        output=${_tmp2}.stats
+    else
+        printf "Warning: default output file (%s) already exists.  Not overwriting\n" ${output} >> /dev/stderr
+    fi
+fi
+
+fastx_lengths ${input} | size_stats - | datamash transpose | tee ${output}
 

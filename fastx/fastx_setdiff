@@ -3,6 +3,8 @@
 
 # (experimental) Calculate the setdiff() of two sets of sequences, returning sequence names unique to the first set 
 
+## Notes:
+# - not sure if the default 'sort' is suitable for all use cases
 
 if [[ $# -ne 2 ]]; then
 	echo "Two arguments are required" > /dev/stderr
