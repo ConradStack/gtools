@@ -18,6 +18,7 @@
 # > ( $(count_bps test_cut.fa) - $(count_bps test.fa) ) / 20 == \
 #	( $(count_seqs test_cut.fa) - $(count_seqs test.fa) )
 
+# - The "conjoined_size" edge attribute *includes* the size of the gap that formerly joined the two edges.  It doesn't have to work like this 
 
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
@@ -25,6 +26,7 @@ from __future__ import unicode_literals
 import argparse, sys, re
 import pyfaidx
 from textwrap import TextWrapper
+import networkx as nx
 
 
 # main() -> parse command line arguments 
@@ -39,42 +41,48 @@ def main(args):
 	make_graph = (args.graphfile is not None)
 	G=nx.DiGraph()
 	curr_node = 0  # ID of the current node 
-
-	# Build splitting pattern, starting with the flags
+    
+    # objects for matching cut pattern and fasta output
 	wrapper = TextWrapper(width=80)
-	re_flags = re.I if args.icase else 0
-	dnaX = re.compile(
-			"[{0}]{{{1},}}".format(args.pattern, args.minlen), 
-			re_flags )
-
-	if(args.verbose): print(dnaX,file=sys.stderr) # VERBOSE
-
-	# Load sequences from fasta file
+	dnaX = re.compile(args.pattern)
 	fasta = pyfaidx.Fasta(args.infile)
 
-	# Loop over each sequence
+	# iterate over all sequences
 	for key in fasta.keys():
 
-		nsubstr = 1 # counter for storing the current substring that is being worked on
-		
 		if(args.verbose): print(key, file=sys.stderr)
-		
-		# Split the current sequence on the specified 
-		# pattern, dnaX, then loop over the results
-		for subfa in dnaX.split( fasta[key][:].seq ):
 
-			#  if subsequence is not an empty string
-			if(subfa):
+		# find instances of pattern in this sequence
+		fastr=fasta[key][:].seq
+		test = dnaX.finditer(fastr)
+		nsubstr=1 # counter for storing the current substring that is being worked on
 
-				# Write new fasta header for this subsequence to output file
-				args.outfile.write('>' + key + '.c' + str(nsubstr) + '\n')
+		for gg in test:
 
-				# Write wrapped subsequence for output file
-				wrap_seq = "\n".join(wrapper.wrap( subfa ))
-				args.outfile.write( wrap_seq + '\n')
+			(ss,se) = gg.span()
+			# print((se-ss))
+			frag_name = key + '_frag' + str(nsubstr)
+			args.outfile.write('>' + frag_name + '\n')
+			wrap_seq = "\n".join(wrapper.wrap( str(fasta[key][ss:se]) ))
+			args.outfile.write( wrap_seq + '\n')
 
-				# increment subsequence count
-				nsubstr += 1
+			# add new node and edge to graph:
+			if(make_graph):
+				prev_node = curr_node
+				curr_node += 1
+				G.add_node( curr_node, label=frag_name, seqname=key, start=(ss+1), end=se, width=(se-ss) )
+				if(nsubstr > 1):
+					gap_width=G.node[curr_node]['start'] - G.node[prev_node]['end'] - 1
+					conjoined_size=G.node[curr_node]['width'] + G.node[prev_node]['width'] + gap_width
+					assert conjoined_size == (G.node[curr_node]['end'] - G.node[prev_node]['start'] + 1)
+					G.add_edge( prev_node, curr_node, removal_cost=0, gap_width=gap_width, conjoined_size=conjoined_size )
+
+			nsubstr += 1
+			# print( str(ss) + " " + str(se))
+
+	# write graph file (if exists)
+	if(make_graph):
+		nx.write_graphml(G, args.graphfile)
 
 
 if __name__ == '__main__':
@@ -85,27 +93,25 @@ if __name__ == '__main__':
 		help='file containing one or more sequences in fastA format')
 	parser.add_argument('-o','--output',dest='outfile', metavar='output_file',
 		nargs='?', type=argparse.FileType('w'), default=sys.stdout,
-		help='file to write the split fasta parts too')
+		help='file to write the split fasta parts to')
+	parser.add_argument('-g','--graph',dest='graphfile', metavar='graph_file',
+		nargs='?', type=str, 
+		help='filename to write the (graphml-formatted) sequence graph to')	
 	parser.add_argument('-v','--verbose',dest='verbose',
-		action='store_true',
-		help="verbose output (mostly for debugging)")
-	parser.add_argument('-i','--ignore-case',dest='icase',
-		action='store_true',
-		help="ignore case when splitting on PATTERN")
+		action='store_true')
 	parser.add_argument('-p','--pattern',dest='pattern', 
 		action='store',
-		default="N",type=str,
-		help="Pattern to split on.  The regular expression that is used to split the fastA sequence is [PATTERN]{MINLEN,}")
+		default="[^Xx]+",type=str,
+		help="(experimental) pattern that matches the sequence to KEEP (the inverse of this pattern are the sites the sequence is cut at)")
 	parser.add_argument('-m','--minlen',dest='minlen', 
-		action='store', type=int,
-		default=10,
-		help="Specify the minimum length of a pattern match to split on. This is useful when short runs of non-gapping N's are present in the sequence.  Runs of N's (or PATTERN) longer than this are effectively removed from the output file")
+		nargs=1, action='store', type=int,
+		default=0,
+		help="(NOT IMPLEMENTED) Specify the minimum length of a pattern match to split on. Otherwise, ignore the match")
 	
+	# TODO 
 	args = parser.parse_args()
-	
-	# VERBOSE
-	if(args.verbose): print( args )
 
+	#args = parser.parse_args(['-o', '/Users/miamimac2/tmp/test_cut.fa','/Users/miamimac2/tmp/test.fa'])
 	main(args)
 
 
