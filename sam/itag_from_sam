@@ -1,0 +1,19 @@
+ #!/bin/bash
+
+# return integer tag value from a specified samfile column 
+
+input="${1:-/dev/stdin}"
+colind=${2:-12}  # echo $colind 
+
+## ${colind} is the column index of an optional tag in a sam file.  
+## - No checking is done here that ${colind} is actually an integer tag (i.e., "[a-zA-Z]+:i:[0-9]+")
+## - min(colind) is 12; columns 1-11 are mandatory
+## - max(colind) was set to 89 arbitrarily
+
+if [[ ${colind} -gt 11 ]] && [[ ${colind} -lt 90 ]]; then
+	bioawk -csam -v colind=${colind} '{ gsub("[^0-9]","", $colind ); print $colind }' ${input}
+else
+	printf "Failure: column index (%d) is either less than the minimum (11) or greater than the maximum (90)\n" ${colind} >> /dev/stderr
+fi
+
+
